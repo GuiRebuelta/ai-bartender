@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 COUNTRY_PORTFOLIOS = {
     "Argentina": ["Quilmes", "Patagonia", "Corona", "Stella Artois", "Budweiser"],
     "Belgium": ["Stella Artois", "Jupiler", "Leffe", "Hoegaarden", "Corona"],
