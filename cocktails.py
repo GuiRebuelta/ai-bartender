@@ -1,135 +1,90 @@
-    {
-        "name": "Long Island Iced Tea",
-        "ingredients": ["vodka", "gin", "rum", "tequila", "triple sec", "lemon", "cola"],
-        "instructions": "Shake spirits, triple sec and lemon with ice. Strain into a highball and top with cola.",
-        "style": "Strong",
-        "flavor_profile": ["strong", "citrusy", "sweet"],
-        "occasions": ["Celebration", "Casual Night"],
-        "popularity": 8,
-        "strength": "Strong",
-        "glass": "Highball",
-        "difficulty": "Medium",
-        "prep_time": "5 minutes",
-    },
-    {
-        "name": "Americano",
-        "ingredients": ["campari", "sweet vermouth", "soda water"],
-        "instructions": "Build over ice and top with soda water. Garnish with orange.",
-        "style": "Bitter",
-        "flavor_profile": ["bitter", "light", "sparkling"],
-        "occasions": ["Dinner Party", "Casual Night"],
-        "popularity": 7,
-        "strength": "Light",
-        "glass": "Highball",
-        "difficulty": "Easy",
-        "prep_time": "3 minutes",
-    },
-    {
-        "name": "Boulevardier",
-        "ingredients": ["bourbon", "campari", "sweet vermouth"],
-        "instructions": "Stir all ingredients with ice and strain over fresh ice.",
-        "style": "Bitter",
-        "flavor_profile": ["bitter", "rich", "spirit-forward"],
-        "occasions": ["Date Night", "Dinner Party"],
-        "popularity": 8,
-        "strength": "Strong",
-        "glass": "Rocks",
-        "difficulty": "Easy",
-        "prep_time": "4 minutes",
-    },
-    {
-        "name": "Sidecar",
-        "ingredients": ["cognac", "orange liqueur", "lemon"],
-        "instructions": "Shake with ice and strain into a coupe.",
-        "style": "Citrusy",
-        "flavor_profile": ["citrusy", "elegant", "balanced"],
-        "occasions": ["Date Night", "Dinner Party"],
-        "popularity": 7,
-        "strength": "Medium",
-        "glass": "Coupe",
-        "difficulty": "Medium",
-        "prep_time": "4 minutes",
-    },
-    {
-        "name": "Bellini",
-        "ingredients": ["prosecco", "peach puree"],
-        "instructions": "Pour peach puree into a flute and top gently with prosecco.",
-        "style": "Sweet",
-        "flavor_profile": ["fruity", "sparkling", "light"],
-        "occasions": ["Brunch", "Celebration"],
-        "popularity": 8,
-        "strength": "Light",
-        "glass": "Flute",
-        "difficulty": "Easy",
-        "prep_time": "3 minutes",
-    },
-    {
-        "name": "Kir Royale",
-        "ingredients": ["champagne", "creme de cassis"],
-        "instructions": "Add creme de cassis to a flute and top with champagne.",
-        "style": "Sweet",
-        "flavor_profile": ["fruity", "sparkling", "elegant"],
-        "occasions": ["Celebration", "Date Night"],
-        "popularity": 7,
-        "strength": "Light",
-        "glass": "Flute",
-        "difficulty": "Easy",
-        "prep_time": "2 minutes",
-    },
-    {
-        "name": "Rum Punch",
-        "ingredients": ["rum", "lime", "orange juice", "pineapple juice", "grenadine"],
-        "instructions": "Shake or build all ingredients over ice. Garnish with fruit.",
-        "style": "Tropical",
-        "flavor_profile": ["fruity", "sweet", "tropical"],
-        "occasions": ["Beach Day", "BBQ", "Celebration"],
-        "popularity": 8,
-        "strength": "Medium",
-        "glass": "Highball",
-        "difficulty": "Easy",
-        "prep_time": "4 minutes",
-    },
-    {
-        "name": "Hugo Spritz",
-        "ingredients": ["prosecco", "elderflower liqueur", "soda water", "mint", "lime"],
-        "instructions": "Build over ice and stir gently. Garnish with mint and lime.",
-        "style": "Refreshing",
-        "flavor_profile": ["floral", "fresh", "sparkling"],
-        "occasions": ["Beach Day", "Brunch", "Casual Night"],
-        "popularity": 8,
-        "strength": "Light",
-        "glass": "Wine Glass",
-        "difficulty": "Easy",
-        "prep_time": "3 minutes",
-    },
-    {
-        "name": "Garibaldi",
-        "ingredients": ["campari", "orange juice"],
-        "instructions": "Build Campari and fluffy orange juice over ice.",
-        "style": "Bitter",
-        "flavor_profile": ["bitter", "citrusy", "light"],
-        "occasions": ["Brunch", "Casual Night"],
-        "popularity": 7,
-        "strength": "Light",
-        "glass": "Highball",
-        "difficulty": "Easy",
-        "prep_time": "2 minutes",
-    },
-    {
-        "name": "Ranch Water",
-        "ingredients": ["tequila", "lime", "soda water"],
-        "instructions": "Build tequila and lime over ice. Top with soda water.",
-        "style": "Refreshing",
-        "flavor_profile": ["light", "citrusy", "dry"],
-        "occasions": ["BBQ", "Beach Day", "Casual Night"],
-        "popularity": 8,
-        "strength": "Light",
-        "glass": "Highball",
-        "difficulty": "Easy",
-        "prep_time": "2 minutes",
-    },
-]
+from __future__ import annotations
+
+from typing import Any
+
+import requests
 
 
-def get_cocktails() -> list[dict]:
-    return COCKTAILS
+BASE_URL = "https://www.thecocktaildb.com/api/json/v1/1"
+
+
+def safe_get_json(url: str, timeout: int = 8) -> dict[str, Any] | None:
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        return response.json()
+    except Exception:
+        return None
+
+
+def search_by_ingredient(ingredient: str) -> list[dict[str, Any]]:
+    url = f"{BASE_URL}/filter.php?i={requests.utils.quote(ingredient)}"
+    data = safe_get_json(url)
+
+    if not data or not data.get("drinks"):
+        return []
+
+    return data["drinks"]
+
+
+def lookup_cocktail(cocktail_id: str) -> dict[str, Any] | None:
+    url = f"{BASE_URL}/lookup.php?i={cocktail_id}"
+    data = safe_get_json(url)
+
+    if not data or not data.get("drinks"):
+        return None
+
+    return data["drinks"][0]
+
+
+def extract_ingredients(drink: dict[str, Any]) -> list[str]:
+    ingredients = []
+
+    for i in range(1, 16):
+        ingredient = drink.get(f"strIngredient{i}")
+        if ingredient:
+            ingredients.append(ingredient.strip().lower())
+
+    return ingredients
+
+
+def extract_instructions(drink: dict[str, Any]) -> str:
+    return drink.get("strInstructions") or "No instructions available."
+
+
+def fetch_cocktaildb_candidates(
+    ingredients: list[str],
+    max_candidates: int = 20,
+) -> list[dict[str, Any]]:
+    cocktail_ids: dict[str, dict[str, Any]] = {}
+
+    for ingredient in ingredients:
+        for item in search_by_ingredient(ingredient):
+            cocktail_ids[item["idDrink"]] = item
+
+    candidates = []
+
+    for cocktail_id in list(cocktail_ids.keys())[:max_candidates]:
+        details = lookup_cocktail(cocktail_id)
+
+        if not details:
+            continue
+
+        candidates.append(
+            {
+                "name": details.get("strDrink", "Unknown Cocktail"),
+                "ingredients": extract_ingredients(details),
+                "instructions": extract_instructions(details),
+                "style": "Surprise Me",
+                "flavor_profile": [],
+                "occasions": ["Casual Night"],
+                "popularity": 6,
+                "strength": "Medium",
+                "glass": details.get("strGlass") or "Glass",
+                "difficulty": "Medium",
+                "prep_time": "4 minutes",
+                "source": "TheCocktailDB",
+            }
+        )
+
+    return candidates
