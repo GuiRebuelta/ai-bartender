@@ -16,31 +16,24 @@ def parse_ingredients(raw_input: str) -> list[str]:
     if not raw_input:
         return []
 
-    ingredients = [
-        normalize_text(item)
-        for item in raw_input.split(",")
-        if normalize_text(item)
-    ]
+    ingredients = []
+    for item in raw_input.split(","):
+        normalized = normalize_text(item)
+        if normalized:
+            ingredients.append(normalized)
 
     return list(dict.fromkeys(ingredients))
 
 
 def safe_json_loads(value: str, fallback: dict[str, Any] | None = None) -> dict[str, Any]:
-    if fallback is None:
-        fallback = {}
-
     try:
         return json.loads(value)
     except Exception:
-        return fallback
+        return fallback or {}
 
 
 def clamp(value: float, minimum: float = 0.0, maximum: float = 100.0) -> float:
     return max(minimum, min(value, maximum))
-
-
-def format_score(score: float) -> str:
-    return f"{round(score)}%"
 
 
 def quality_label(score: float) -> str:
@@ -55,16 +48,18 @@ def quality_label(score: float) -> str:
     return "Creative"
 
 
+def format_score(score: float) -> str:
+    return f"{round(score)}%"
+
+
 def deduplicate_by_name(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    seen: set[str] = set()
-    result: list[dict[str, Any]] = []
+    seen = set()
+    unique = []
 
     for item in items:
         name = normalize_text(str(item.get("name", "")))
-        if not name or name in seen:
-            continue
+        if name and name not in seen:
+            seen.add(name)
+            unique.append(item)
 
-        seen.add(name)
-        result.append(item)
-
-    return result
+    return unique
